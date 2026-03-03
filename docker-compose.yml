@@ -5,48 +5,58 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: aburahma_development
+      POSTGRES_DB: app_production
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 1s
-      timeout: 3s
-      retries: 30
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
     restart: always
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 1s
+      interval: 5s
       timeout: 3s
-      retries: 30
+      retries: 5
 
   app:
     build: .
-    restart: always
+    image: myapp_image:latest
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/aburahma_development
-      REDIS_URL: redis://redis:6379/0
+       RAILS_ENV: production
+       DATABASE_URL: postgres://postgres:password@db:5432/app_production
+       REDIS_URL: redis://redis:6379/0
+       RAILS_LOG_TO_STDOUT: "true"
+       RAILS_SERVE_STATIC_FILES: "true"
+       RAILS_HOST: backend.aburahmah.com #need to make sure from domain
+       RAILS_PROTOCOL: https
+       RAILS_ASSUME_SSL: "false"
+       RAILS_FORCE_SSL: "false"
+       PORT: "9006"
+       SECRET_KEY_BASE: 36aacb7954cb8b8cc8677cbe7d3251049defe1853f11718c17f635edc8171da2
     volumes:
-      - .:/app
       - storage:/app/storage
     ports:
-      - "3000:3000"
-    command: /bin/sh -c "rm -f tmp/pids/server.pid && bundle exec rails s -b '0.0.0.0'"
+      - "9006:9006"
+    command: ["bash", "-c", "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0 -p ${PORT:-9006}"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:${PORT:-9006}/up || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
   sidekiq:
-    build: .
+    image: myapp_image:latest
     restart: always
     depends_on:
       db:
@@ -54,8 +64,10 @@ services:
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/aburahma_development
+      RAILS_ENV: production
+      DATABASE_URL: postgres://postgres:password@db:5432/app_production
       REDIS_URL: redis://redis:6379/0
+      SECRET_KEY_BASE: 36aacb7954cb8b8cc8677cbe7d3251049defe1853f11718c17f635edc8171da2
     volumes:
       - storage:/app/storage
     command: ["bundle", "exec", "sidekiq"]
