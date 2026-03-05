@@ -9,7 +9,6 @@ class FaqsController < ApplicationController
         id: faq.id,
         question_ar: faq.question_ar,
         question_en: faq.question_en,
-        video_url: faq.video_url,
         answer_ar: faq.answer_ar,
         answer_en: faq.answer_en,
         is_published: faq.is_published
@@ -48,7 +47,6 @@ class FaqsController < ApplicationController
         id: faq.id,
         question_ar: faq.question_ar,
         question_en: faq.question_en,
-        video_url: faq.video_url,
         answer_ar: faq.answer_ar,
         answer_en: faq.answer_en,
         is_published: faq.is_published

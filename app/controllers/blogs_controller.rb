@@ -95,7 +95,6 @@ end
             answer_ar: faq.answer_ar,
             answer_en: faq.answer_en,
             is_published: faq.is_published,
-            video_url: faq.video_url,
           }
         }
     }
